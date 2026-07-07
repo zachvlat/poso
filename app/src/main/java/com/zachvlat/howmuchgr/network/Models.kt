@@ -89,3 +89,34 @@ data class RetailerPrice(
     val lastUpdated: String? = null,
     val country: String? = null
 )
+
+@Serializable
+data class CategoryTreeResponse(
+    val tree: List<CategoryNode>
+)
+
+@Serializable
+data class CategoryNode(
+    @SerialName("category_id")
+    val categoryId: String,
+    val name: String,
+    val children: List<CategoryNode> = emptyList(),
+    @SerialName("image_url")
+    val imageUrl: String? = null,
+    @SerialName("total_product_count")
+    val totalProductCount: Int? = null,
+    val hidden: Boolean = false
+)
+
+@Serializable
+data class ProductsResponse(
+    val products: List<Product>,
+    val page: Int? = null,
+    @SerialName("page_size")
+    val pageSize: Int? = null,
+    val total: Int? = null,
+    @SerialName("sort_by")
+    val sortBy: String? = null,
+    @SerialName("sort_order")
+    val sortOrder: String? = null
+)

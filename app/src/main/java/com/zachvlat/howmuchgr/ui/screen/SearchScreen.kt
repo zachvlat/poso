@@ -27,12 +27,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.zachvlat.howmuchgr.data.WishlistRepository
 import com.zachvlat.howmuchgr.network.Product
 import com.zachvlat.howmuchgr.ui.viewmodel.SearchViewModel
 
@@ -137,17 +141,51 @@ fun ProductList(products: List<Product>) {
 
 @Composable
 fun ProductCard(product: Product) {
+    var isWishlisted by remember { mutableStateOf(WishlistRepository.isSaved(product.name)) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = product.name.trim(),
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = product.name.trim(),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                IconButton(
+                    onClick = {
+                        if (isWishlisted) {
+                            WishlistRepository.removeQuery(product.name)
+                        } else {
+                            WishlistRepository.addQuery(product.name)
+                        }
+                        isWishlisted = !isWishlisted
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (isWishlisted)
+                            Icons.Default.Favorite
+                        else
+                            Icons.Default.FavoriteBorder,
+                        contentDescription = if (isWishlisted)
+                            "Αφαίρεση από αγαπημένα"
+                        else
+                            "Προσθήκη στα αγαπημένα",
+                        tint = if (isWishlisted)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             if (!product.brand.isNullOrBlank()) {
                 Text(
