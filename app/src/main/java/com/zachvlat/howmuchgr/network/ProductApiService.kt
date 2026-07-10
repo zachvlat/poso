@@ -39,6 +39,20 @@ interface ProductApiService {
         "X-App-Version: 1.0.0",
         "X-Platform: flutter-web"
     )
+    @GET("products/{id}")
+    suspend fun getProductById(
+        @retrofit2.http.Path("id") id: String,
+        @Query("sort_retailers") sortRetailers: String = "asc",
+        @Query("countries") countries: String = "GR",
+        @Query("include_tax") includeTax: Boolean = true,
+        @Query("include_history") includeHistory: Boolean = true
+    ): Product
+
+    @Headers(
+        "Accept: application/json",
+        "X-App-Version: 1.0.0",
+        "X-Platform: flutter-web"
+    )
     @GET("products")
     suspend fun getProductsByCategory(
         @Query("page") page: Int = 1,

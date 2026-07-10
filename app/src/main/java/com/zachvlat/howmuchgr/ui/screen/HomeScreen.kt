@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.zachvlat.howmuchgr.network.CategoryNode
 import com.zachvlat.howmuchgr.ui.viewmodel.HomeViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -57,94 +59,107 @@ fun HomeScreen(
         viewModel.onBackClick()
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
+    Box(modifier = modifier) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            if (state.canGoBack) {
-                IconButton(onClick = viewModel::onBackClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Πίσω"
-                    )
-                }
-                Spacer(modifier = Modifier.width(4.dp))
-            }
-            Text(
-                text = state.currentTitle,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        when {
-            state.isLoading && !state.isProductView -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            state.error != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = state.error ?: "",
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (state.canGoBack) {
+                    IconButton(onClick = viewModel::onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Πίσω"
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        IconButton(onClick = viewModel::retry) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Επανάληψη"
-                            )
-                        }
                     }
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
+                Text(
+                    text = state.currentTitle,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
-            state.isProductView -> {
-                if (state.isLoading) {
+            Spacer(modifier = Modifier.height(12.dp))
+
+            when {
+                state.isLoading && !state.isProductView -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         CircularProgressIndicator()
                     }
-                } else if (state.products.isEmpty()) {
+                }
+
+                state.error != null -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Δεν βρέθηκαν προϊόντα",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = state.error ?: "",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            IconButton(onClick = viewModel::retry) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Επανάληψη"
+                                )
+                            }
+                        }
+                    }
+                }
+
+                state.isProductView -> {
+                    if (state.isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else if (state.products.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Δεν βρέθηκαν προϊόντα",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        ProductList(
+                            products = state.products,
+                            onProductClick = viewModel::onProductClick
                         )
                     }
-                } else {
-                    ProductList(products = state.products)
+                }
+
+                else -> {
+                    CategoryGrid(
+                        categories = state.categories,
+                        onCategoryClick = viewModel::onCategoryClick
+                    )
                 }
             }
+        }
 
-            else -> {
-                CategoryGrid(
-                    categories = state.categories,
-                    onCategoryClick = viewModel::onCategoryClick
-                )
-            }
+        state.selectedProduct?.let { product ->
+            ProductDetailBottomSheet(
+                product = product,
+                isLoading = state.isDetailLoading,
+                onDismiss = viewModel::dismissProductDetail
+            )
         }
     }
 }

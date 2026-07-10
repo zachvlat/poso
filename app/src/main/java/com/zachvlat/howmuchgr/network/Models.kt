@@ -52,7 +52,8 @@ data class Product(
     @SerialName("available_countries")
     val availableCountries: List<String> = emptyList(),
     @SerialName("is_international")
-    val isInternational: Boolean = false
+    val isInternational: Boolean = false,
+    val history: PriceHistory? = null
 )
 
 @Serializable
@@ -119,4 +120,30 @@ data class ProductsResponse(
     val sortBy: String? = null,
     @SerialName("sort_order")
     val sortOrder: String? = null
+)
+
+@Serializable
+data class PriceHistory(
+    val retailers: List<String> = emptyList(),
+    @SerialName("daily_prices")
+    val dailyPrices: Map<String, List<DailyPriceEntry>> = emptyMap(),
+    @SerialName("date_range")
+    val dateRange: DateRange? = null,
+    @SerialName("available_countries")
+    val availableCountries: List<String> = emptyList()
+)
+
+@Serializable
+data class DailyPriceEntry(
+    val date: String,
+    val country: String? = null,
+    val price: Double? = null,
+    @SerialName("unit_price")
+    val unitPrice: Double? = null
+)
+
+@Serializable
+data class DateRange(
+    val start: String? = null,
+    val end: String? = null
 )

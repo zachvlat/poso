@@ -17,7 +17,9 @@ data class HomeUiState(
     val error: String? = null,
     val currentTitle: String = "Κατηγορίες",
     val canGoBack: Boolean = false,
-    val isProductView: Boolean = false
+    val isProductView: Boolean = false,
+    val selectedProduct: Product? = null,
+    val isDetailLoading: Boolean = false
 )
 
 class HomeViewModel : ViewModel() {
@@ -90,6 +92,28 @@ class HomeViewModel : ViewModel() {
 
     fun retry() {
         loadRootCategories()
+    }
+
+    fun onProductClick(product: Product) {
+        _uiState.value = _uiState.value.copy(selectedProduct = product, isDetailLoading = true)
+        viewModelScope.launch {
+            try {
+                val detailed = apiService.getProductById(product.id)
+                _uiState.value = _uiState.value.copy(
+                    selectedProduct = detailed,
+                    isDetailLoading = false
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    selectedProduct = product,
+                    isDetailLoading = false
+                )
+            }
+        }
+    }
+
+    fun dismissProductDetail() {
+        _uiState.value = _uiState.value.copy(selectedProduct = null, isDetailLoading = false)
     }
 
     private fun loadProducts(category: CategoryNode) {

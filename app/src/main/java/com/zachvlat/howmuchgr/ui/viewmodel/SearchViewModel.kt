@@ -18,7 +18,9 @@ data class SearchUiState(
     val products: List<Product> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isCurrentQuerySaved: Boolean = false
+    val isCurrentQuerySaved: Boolean = false,
+    val selectedProduct: Product? = null,
+    val isDetailLoading: Boolean = false
 )
 
 class SearchViewModel : ViewModel() {
@@ -62,6 +64,28 @@ class SearchViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(
             isCurrentQuerySaved = !_uiState.value.isCurrentQuerySaved
         )
+    }
+
+    fun onProductClick(product: Product) {
+        _uiState.value = _uiState.value.copy(selectedProduct = product, isDetailLoading = true)
+        viewModelScope.launch {
+            try {
+                val detailed = apiService.getProductById(product.id)
+                _uiState.value = _uiState.value.copy(
+                    selectedProduct = detailed,
+                    isDetailLoading = false
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    selectedProduct = product,
+                    isDetailLoading = false
+                )
+            }
+        }
+    }
+
+    fun dismissProductDetail() {
+        _uiState.value = _uiState.value.copy(selectedProduct = null, isDetailLoading = false)
     }
 
     private suspend fun searchProducts(query: String) {
