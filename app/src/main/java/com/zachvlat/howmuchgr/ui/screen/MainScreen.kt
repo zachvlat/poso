@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -28,7 +29,8 @@ private data class NavTab(
 private val tabs = listOf(
     NavTab("Αρχική", Icons.Default.Home),
     NavTab("Αναζήτηση", Icons.Default.Search),
-    NavTab("Αγαπημένα", Icons.Default.Favorite)
+    NavTab("Αγαπημένα", Icons.Default.Favorite),
+    NavTab("Καλάθι", Icons.Default.ShoppingCart)
 )
 
 @Composable
@@ -80,6 +82,10 @@ fun MainScreen() {
                         selectedTab = 1
                     }
                 )
+            }
+
+            3 -> {
+                CartScreen(modifier = Modifier.padding(innerPadding))
             }
         }
     }

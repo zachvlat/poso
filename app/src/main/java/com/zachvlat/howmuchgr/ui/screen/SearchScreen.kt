@@ -23,6 +23,8 @@ import coil.request.ImageRequest
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.AddShoppingCart
+import androidx.compose.material.icons.filled.RemoveShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.zachvlat.howmuchgr.data.CartRepository
 import com.zachvlat.howmuchgr.data.WishlistRepository
 import com.zachvlat.howmuchgr.network.DailyPriceEntry
 import com.zachvlat.howmuchgr.network.Product
@@ -171,7 +174,8 @@ fun SearchScreen(
 @Composable
 fun ProductList(
     products: List<Product>,
-    onProductClick: (Product) -> Unit = {}
+    onProductClick: (Product) -> Unit = {},
+    cartToggle: Boolean = false
 ) {
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -179,7 +183,8 @@ fun ProductList(
         items(products, key = { it.id }) { product ->
             ProductCard(
                 product = product,
-                onClick = { onProductClick(product) }
+                onClick = { onProductClick(product) },
+                cartToggle = cartToggle
             )
         }
     }
@@ -188,7 +193,8 @@ fun ProductList(
 @Composable
 fun ProductCard(
     product: Product,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    cartToggle: Boolean = false
 ) {
     var isWishlisted by remember { mutableStateOf(WishlistRepository.isSaved(product.name)) }
     val context = LocalContext.current
@@ -227,30 +233,60 @@ fun ProductCard(
                     modifier = Modifier.weight(1f)
                 )
 
-                IconButton(
-                    onClick = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    var isInCart by remember { mutableStateOf(CartRepository.isInCart(product.id)) }
+                    IconButton(onClick = {
+                        if (cartToggle) {
+                            if (isInCart) {
+                                CartRepository.removeProduct(product.id)
+                            } else {
+                                CartRepository.addProduct(product.id)
+                            }
+                            isInCart = !isInCart
+                        } else {
+                            CartRepository.addProduct(product.id)
+                            isInCart = true
+                        }
+                    }) {
+                        Icon(
+                            imageVector = if (isInCart)
+                                Icons.Default.RemoveShoppingCart
+                            else
+                                Icons.Default.AddShoppingCart,
+                            contentDescription = if (isInCart)
+                                "Αφαίρεση από καλάθι"
+                            else
+                                "Προσθήκη στο καλάθι",
+                            tint = if (isInCart)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    IconButton(onClick = {
                         if (isWishlisted) {
                             WishlistRepository.removeQuery(product.name)
                         } else {
                             WishlistRepository.addQuery(product.name)
                         }
                         isWishlisted = !isWishlisted
+                    }) {
+                        Icon(
+                            imageVector = if (isWishlisted)
+                                Icons.Default.Favorite
+                            else
+                                Icons.Default.FavoriteBorder,
+                            contentDescription = if (isWishlisted)
+                                "Αφαίρεση από αγαπημένα"
+                            else
+                                "Προσθήκη στα αγαπημένα",
+                            tint = if (isWishlisted)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                ) {
-                    Icon(
-                        imageVector = if (isWishlisted)
-                            Icons.Default.Favorite
-                        else
-                            Icons.Default.FavoriteBorder,
-                        contentDescription = if (isWishlisted)
-                            "Αφαίρεση από αγαπημένα"
-                        else
-                            "Προσθήκη στα αγαπημένα",
-                        tint = if (isWishlisted)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 

@@ -176,7 +176,8 @@ fun HomeScreen(
                             } else {
                                 ProductList(
                                     products = filteredProducts,
-                                    onProductClick = viewModel::onProductClick
+                                    onProductClick = viewModel::onProductClick,
+                                    cartToggle = true
                                 )
                             }
                         }
