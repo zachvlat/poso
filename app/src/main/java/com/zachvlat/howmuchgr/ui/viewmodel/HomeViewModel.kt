@@ -19,7 +19,8 @@ data class HomeUiState(
     val canGoBack: Boolean = false,
     val isProductView: Boolean = false,
     val selectedProduct: Product? = null,
-    val isDetailLoading: Boolean = false
+    val isDetailLoading: Boolean = false,
+    val filterQuery: String = ""
 )
 
 class HomeViewModel : ViewModel() {
@@ -49,7 +50,10 @@ class HomeViewModel : ViewModel() {
                 )
                 backStack.clear()
             } catch (e: Exception) {
-                _uiState.value = HomeUiState(error = e.message ?: "Σφάλμα φόρτωσης κατηγοριών")
+                _uiState.value = HomeUiState(
+                    error = e.message ?: "Σφάλμα φόρτωσης κατηγοριών",
+                    filterQuery = ""
+                )
             }
         }
     }
@@ -77,7 +81,8 @@ class HomeViewModel : ViewModel() {
                 products = emptyList(),
                 isProductView = false,
                 isLoading = false,
-                error = null
+                error = null,
+                filterQuery = ""
             )
         } else if (backStack.isNotEmpty()) {
             val (title, categories) = backStack.removeLast()
@@ -92,6 +97,10 @@ class HomeViewModel : ViewModel() {
 
     fun retry() {
         loadRootCategories()
+    }
+
+    fun onFilterQueryChanged(query: String) {
+        _uiState.value = _uiState.value.copy(filterQuery = query)
     }
 
     fun onProductClick(product: Product) {
@@ -122,7 +131,8 @@ class HomeViewModel : ViewModel() {
                 isLoading = true,
                 error = null,
                 isProductView = true,
-                products = emptyList()
+                products = emptyList(),
+                filterQuery = ""
             )
             try {
                 val response = apiService.getProductsByCategory(

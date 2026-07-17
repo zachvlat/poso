@@ -30,10 +30,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -138,10 +140,46 @@ fun HomeScreen(
                             )
                         }
                     } else {
-                        ProductList(
-                            products = state.products,
-                            onProductClick = viewModel::onProductClick
-                        )
+                        val filteredProducts = remember(state.products, state.filterQuery) {
+                            if (state.filterQuery.isBlank()) state.products
+                            else {
+                                val q = state.filterQuery.lowercase()
+                                state.products.filter {
+                                    it.name.lowercase().contains(q) ||
+                                            (it.brand?.lowercase()?.contains(q) == true) ||
+                                            (it.category?.lowercase()?.contains(q) == true)
+                                }
+                            }
+                        }
+                        Column {
+                            OutlinedTextField(
+                                value = state.filterQuery,
+                                onValueChange = viewModel::onFilterQueryChanged,
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("Φίλτρο προϊόντων...") },
+                                singleLine = true
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            if (filteredProducts.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "Δεν βρέθηκαν προϊόντα",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            } else {
+                                ProductList(
+                                    products = filteredProducts,
+                                    onProductClick = viewModel::onProductClick
+                                )
+                            }
+                        }
                     }
                 }
 
