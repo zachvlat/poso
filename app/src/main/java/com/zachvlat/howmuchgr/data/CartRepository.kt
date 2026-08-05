@@ -8,6 +8,7 @@ import kotlinx.serialization.json.Json
 object CartRepository {
     private const val PREFS_NAME = "cart"
     private const val KEY_QUANTITIES = "cart_quantities"
+    private const val KEY_STORES = "selected_stores"
 
     private lateinit var prefs: SharedPreferences
     private val json = Json { ignoreUnknownKeys = true }
@@ -38,6 +39,7 @@ object CartRepository {
         val current = map[productId] ?: return
         if (current <= 1) {
             map.remove(productId)
+            clearSelectedStore(productId)
         } else {
             map[productId] = current - 1
         }
@@ -47,6 +49,7 @@ object CartRepository {
     fun removeProduct(productId: String) {
         val map = getQuantities().toMutableMap()
         map.remove(productId)
+        clearSelectedStore(productId)
         save(map)
     }
 
@@ -54,7 +57,33 @@ object CartRepository {
 
     fun isInCart(productId: String): Boolean = getQuantity(productId) > 0
 
+    fun getSelectedStores(): Map<String, String> {
+        val raw = prefs.getString(KEY_STORES, "{}") ?: "{}"
+        return try {
+            json.decodeFromString(raw)
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
+    fun setSelectedStore(productId: String, retailerKey: String) {
+        val map = getSelectedStores().toMutableMap()
+        map[productId] = retailerKey
+        saveStores(map)
+    }
+
+    fun clearSelectedStore(productId: String) {
+        val map = getSelectedStores().toMutableMap()
+        if (map.remove(productId) != null) {
+            saveStores(map)
+        }
+    }
+
     private fun save(map: Map<String, Int>) {
         prefs.edit().putString(KEY_QUANTITIES, json.encodeToString(map)).apply()
+    }
+
+    private fun saveStores(map: Map<String, String>) {
+        prefs.edit().putString(KEY_STORES, json.encodeToString(map)).apply()
     }
 }

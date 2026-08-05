@@ -20,20 +20,30 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.zachvlat.howmuchgr.network.RetailerPrice
 import com.zachvlat.howmuchgr.ui.viewmodel.CartItem
 import com.zachvlat.howmuchgr.ui.viewmodel.CartViewModel
 import com.zachvlat.howmuchgr.ui.viewmodel.StoreTotal
@@ -115,7 +125,10 @@ fun CartScreen(
                             item = item,
                             onIncrement = { viewModel.increment(item.product.id) },
                             onDecrement = { viewModel.decrement(item.product.id) },
-                            onRemove = { viewModel.removeProduct(item.product.id) }
+                            onRemove = { viewModel.removeProduct(item.product.id) },
+                            onStoreSelected = { storeKey ->
+                                viewModel.selectStore(item.product.id, storeKey)
+                            }
                         )
                     }
                 }
@@ -175,48 +188,60 @@ private fun StoreTotalRow(store: StoreTotal) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CartItemCard(
     item: CartItem,
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onStoreSelected: (String) -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
                     text = item.product.name.trim(),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 2
+                    maxLines = 2,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = item.storeName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
 
-            Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
-            Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "%.2f €".format(item.cheapestPrice * item.quantity),
+                    text = "%.2f €".format(item.price * item.quantity),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
+            }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            StoreSelector(
+                selectedStoreName = item.storeName,
+                stores = item.availableStores,
+                onStoreSelected = onStoreSelected
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onDecrement) {
                         Icon(
@@ -237,6 +262,8 @@ private fun CartItemCard(
                     }
                 }
 
+                Spacer(modifier = Modifier.weight(1f))
+
                 IconButton(onClick = onRemove) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -244,6 +271,60 @@ private fun CartItemCard(
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StoreSelector(
+    selectedStoreName: String,
+    stores: List<RetailerPrice>,
+    onStoreSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = selectedStoreName,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Κατάστημα") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+            singleLine = true
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            stores.forEach { store ->
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(
+                                text = store.retailerDisplayName,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = "%.2f €".format(store.price),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    onClick = {
+                        onStoreSelected(store.retailer)
+                        expanded = false
+                    }
+                )
             }
         }
     }

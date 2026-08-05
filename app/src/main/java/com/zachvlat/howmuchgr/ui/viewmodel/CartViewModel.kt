@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.zachvlat.howmuchgr.data.CartRepository
 import com.zachvlat.howmuchgr.network.Product
 import com.zachvlat.howmuchgr.network.ProductApiService
+import com.zachvlat.howmuchgr.network.RetailerPrice
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,9 +13,11 @@ import kotlinx.coroutines.launch
 
 data class CartItem(
     val product: Product,
-    val cheapestPrice: Double,
+    val price: Double,
     val storeName: String,
-    val quantity: Int
+    val storeKey: String,
+    val quantity: Int,
+    val availableStores: List<RetailerPrice>
 )
 
 data class StoreTotal(
@@ -77,6 +80,11 @@ class CartViewModel : ViewModel() {
         rebuildState()
     }
 
+    fun selectStore(productId: String, retailerKey: String) {
+        CartRepository.setSelectedStore(productId, retailerKey)
+        rebuildState()
+    }
+
     private fun rebuildState() {
         val quantities = CartRepository.getQuantities()
         if (quantities.isEmpty()) {
@@ -85,22 +93,25 @@ class CartViewModel : ViewModel() {
             return
         }
 
+        val selectedStores = CartRepository.getSelectedStores()
         val items = mutableListOf<CartItem>()
         for ((id, qty) in quantities) {
             val product = productCache[id] ?: continue
-            val cheapest = product.retailerPrices
-                .filter { it.price != null }
-                .minByOrNull { it.price!! }
-            if (cheapest != null) {
-                items.add(
-                    CartItem(
-                        product = product,
-                        cheapestPrice = cheapest.price!!,
-                        storeName = cheapest.retailerDisplayName,
-                        quantity = qty
-                    )
+            val availableStores = product.retailerPrices.filter { it.price != null }
+            if (availableStores.isEmpty()) continue
+            val selectedKey = selectedStores[id]
+            val chosen = availableStores.firstOrNull { it.retailer == selectedKey }
+                ?: availableStores.minByOrNull { it.price!! }!!
+            items.add(
+                CartItem(
+                    product = product,
+                    price = chosen.price!!,
+                    storeName = chosen.retailerDisplayName,
+                    storeKey = chosen.retailer,
+                    quantity = qty,
+                    availableStores = availableStores
                 )
-            }
+            )
         }
         _uiState.value = buildState(items)
     }
@@ -108,12 +119,12 @@ class CartViewModel : ViewModel() {
     private fun buildState(items: List<CartItem>): CartUiState {
         val storeMap = mutableMapOf<String, Double>()
         for (item in items) {
-            storeMap[item.storeName] = (storeMap[item.storeName] ?: 0.0) + item.cheapestPrice * item.quantity
+            storeMap[item.storeName] = (storeMap[item.storeName] ?: 0.0) + item.price * item.quantity
         }
         val storeTotals = storeMap.map { (name, total) ->
             StoreTotal(storeName = name, total = total)
         }.sortedByDescending { it.total }
-        val grandTotal = items.sumOf { it.cheapestPrice * it.quantity }
+        val grandTotal = items.sumOf { it.price * it.quantity }
         return CartUiState(
             items = items,
             storeTotals = storeTotals,
