@@ -65,6 +65,8 @@ interface ProductApiService {
 
     companion object {
         private const val BASE_URL = "https://api.posokanei.gov.gr/"
+        private const val USER_AGENT =
+            "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36"
 
         fun create(): ProductApiService {
             val json = Json {
@@ -78,6 +80,13 @@ interface ProductApiService {
 
             val client = OkHttpClient.Builder()
                 .addInterceptor(logging)
+                .addInterceptor { chain ->
+                    chain.proceed(
+                        chain.request().newBuilder()
+                            .header("User-Agent", USER_AGENT)
+                            .build()
+                    )
+                }
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build()
