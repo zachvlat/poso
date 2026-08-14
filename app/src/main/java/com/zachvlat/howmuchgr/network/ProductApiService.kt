@@ -74,11 +74,22 @@ interface ProductApiService {
                 coerceInputValues = true
             }
 
+            val contentType = "application/json".toMediaType()
+
+            return Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(createOkHttpClient())
+                .addConverterFactory(json.asConverterFactory(contentType))
+                .build()
+                .create(ProductApiService::class.java)
+        }
+
+        fun createOkHttpClient(): OkHttpClient {
             val logging = HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             }
 
-            val client = OkHttpClient.Builder()
+            return OkHttpClient.Builder()
                 .addInterceptor(logging)
                 .addInterceptor { chain ->
                     chain.proceed(
@@ -90,15 +101,6 @@ interface ProductApiService {
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build()
-
-            val contentType = "application/json".toMediaType()
-
-            return Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .client(client)
-                .addConverterFactory(json.asConverterFactory(contentType))
-                .build()
-                .create(ProductApiService::class.java)
         }
     }
 }

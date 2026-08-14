@@ -198,7 +198,8 @@ fun ProductCard(
 ) {
     var isWishlisted by remember { mutableStateOf(WishlistRepository.isSaved(product.name)) }
     val context = LocalContext.current
-    val imageUrl = "https://api.posokanei.gov.gr/images/product/${product.id}"
+    val imageUrl = product.imageUrl
+        ?: "https://api.posokanei.gov.gr/images/product/${product.id}"
 
     Card(
         modifier = Modifier
@@ -367,7 +368,8 @@ fun ProductDetailBottomSheet(
                 .verticalScroll(rememberScrollState())
         ) {
             val context = LocalContext.current
-            val imageUrl = "https://api.posokanei.gov.gr/images/product/${product.id}"
+            val imageUrl = product.imageUrl
+                ?: "https://api.posokanei.gov.gr/images/product/${product.id}"
 
             AsyncImage(
                 model = ImageRequest.Builder(context)
@@ -623,8 +625,8 @@ fun PriceHistoryChart(
 
     if (allDates.isEmpty() || selectedEntries.isEmpty()) return
 
-    val allPrices = remember(selectedEntries) {
-        selectedEntries.mapNotNull { it.price }
+    val allPrices = remember(dailyPrices) {
+        dailyPrices.values.flatten().mapNotNull { it.price }
     }
 
     if (allPrices.isEmpty()) return
