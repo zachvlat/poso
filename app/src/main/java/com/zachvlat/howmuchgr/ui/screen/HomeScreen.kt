@@ -160,6 +160,12 @@ fun HomeScreen(
                                 singleLine = true
                             )
                             Spacer(modifier = Modifier.height(8.dp))
+                            SortChips(
+                                sortBy = state.sortBy,
+                                sortOrder = state.sortOrder,
+                                onSortChanged = viewModel::onSortChanged
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
                             if (filteredProducts.isEmpty()) {
                                 Box(
                                     modifier = Modifier

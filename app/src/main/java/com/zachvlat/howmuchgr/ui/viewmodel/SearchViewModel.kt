@@ -20,7 +20,9 @@ data class SearchUiState(
     val error: String? = null,
     val isCurrentQuerySaved: Boolean = false,
     val selectedProduct: Product? = null,
-    val isDetailLoading: Boolean = false
+    val isDetailLoading: Boolean = false,
+    val sortBy: String = "name",
+    val sortOrder: String = "asc"
 )
 
 class SearchViewModel : ViewModel() {
@@ -44,6 +46,17 @@ class SearchViewModel : ViewModel() {
                 searchProducts(query)
             } else {
                 _uiState.value = _uiState.value.copy(products = emptyList(), error = null)
+            }
+        }
+    }
+
+    fun onSortChanged(sortBy: String, sortOrder: String) {
+        _uiState.value = _uiState.value.copy(sortBy = sortBy, sortOrder = sortOrder)
+        val q = _uiState.value.query
+        if (q.isNotBlank()) {
+            searchJob?.cancel()
+            searchJob = viewModelScope.launch {
+                searchProducts(q)
             }
         }
     }
@@ -91,7 +104,11 @@ class SearchViewModel : ViewModel() {
     private suspend fun searchProducts(query: String) {
         _uiState.value = _uiState.value.copy(isLoading = true, error = null)
         try {
-            val request = SearchRequest(title = query)
+            val request = SearchRequest(
+                title = query,
+                sortBy = _uiState.value.sortBy,
+                sortOrder = _uiState.value.sortOrder
+            )
             val response = apiService.searchProducts(request)
             _uiState.value = _uiState.value.copy(
                 products = response.products,

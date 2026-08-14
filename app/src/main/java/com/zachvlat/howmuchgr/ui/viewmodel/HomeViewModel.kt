@@ -20,7 +20,9 @@ data class HomeUiState(
     val isProductView: Boolean = false,
     val selectedProduct: Product? = null,
     val isDetailLoading: Boolean = false,
-    val filterQuery: String = ""
+    val filterQuery: String = "",
+    val sortBy: String = "unit_price",
+    val sortOrder: String = "asc"
 )
 
 class HomeViewModel : ViewModel() {
@@ -31,6 +33,7 @@ class HomeViewModel : ViewModel() {
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private val backStack = mutableListOf<Pair<String, List<CategoryNode>>>()
+    private var currentCategory: CategoryNode? = null
 
     init {
         loadRootCategories()
@@ -103,6 +106,11 @@ class HomeViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(filterQuery = query)
     }
 
+    fun onSortChanged(sortBy: String, sortOrder: String) {
+        _uiState.value = _uiState.value.copy(sortBy = sortBy, sortOrder = sortOrder)
+        currentCategory?.let { loadProducts(it) }
+    }
+
     fun onProductClick(product: Product) {
         _uiState.value = _uiState.value.copy(selectedProduct = product, isDetailLoading = true)
         viewModelScope.launch {
@@ -126,6 +134,7 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun loadProducts(category: CategoryNode) {
+        currentCategory = category
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
                 isLoading = true,
@@ -136,7 +145,9 @@ class HomeViewModel : ViewModel() {
             )
             try {
                 val response = apiService.getProductsByCategory(
-                    categoryId = category.categoryId
+                    categoryId = category.categoryId,
+                    sortBy = _uiState.value.sortBy,
+                    sortOrder = _uiState.value.sortOrder
                 )
                 _uiState.value = _uiState.value.copy(
                     products = response.products,

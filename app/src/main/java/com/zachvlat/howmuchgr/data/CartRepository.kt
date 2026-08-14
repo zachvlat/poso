@@ -2,8 +2,15 @@ package com.zachvlat.howmuchgr.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+
+@Serializable
+data class SharedCartPayload(
+    val quantities: Map<String, Int>,
+    val stores: Map<String, String> = emptyMap()
+)
 
 object CartRepository {
     private const val PREFS_NAME = "cart"
@@ -76,6 +83,33 @@ object CartRepository {
         val map = getSelectedStores().toMutableMap()
         if (map.remove(productId) != null) {
             saveStores(map)
+        }
+    }
+
+    fun getSharePayload(): String? {
+        val quantities = getQuantities()
+        if (quantities.isEmpty()) return null
+        return json.encodeToString(
+            SharedCartPayload(
+                quantities = quantities,
+                stores = getSelectedStores()
+            )
+        )
+    }
+
+    fun replaceCart(payload: String): Boolean {
+        return try {
+            val parsed = json.decodeFromString<SharedCartPayload>(payload)
+            val quantities = parsed.quantities
+                .filterValues { it > 0 }
+                .toMap()
+            if (quantities.isEmpty()) return false
+            val stores = parsed.stores.filterKeys { it in quantities }
+            save(quantities)
+            saveStores(stores)
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 

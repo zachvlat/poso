@@ -29,6 +29,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -121,6 +122,14 @@ fun SearchScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            SortChips(
+                sortBy = state.sortBy,
+                sortOrder = state.sortOrder,
+                onSortChanged = viewModel::onSortChanged
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             when {
                 state.isLoading -> {
                     Box(
@@ -166,6 +175,52 @@ fun SearchScreen(
                 product = product,
                 isLoading = state.isDetailLoading,
                 onDismiss = viewModel::dismissProductDetail
+            )
+        }
+    }
+}
+
+@Composable
+fun SortChips(
+    sortBy: String,
+    sortOrder: String,
+    onSortChanged: (String, String) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            FilterChip(
+                selected = sortBy == "unit_price" && sortOrder == "asc",
+                onClick = {
+                    if (!(sortBy == "unit_price" && sortOrder == "asc")) {
+                        onSortChanged("unit_price", "asc")
+                    }
+                },
+                label = { Text("Φθηνότερο ανά μονάδα") }
+            )
+        }
+        item {
+            FilterChip(
+                selected = sortBy == "price" && sortOrder == "asc",
+                onClick = {
+                    if (!(sortBy == "price" && sortOrder == "asc")) {
+                        onSortChanged("price", "asc")
+                    }
+                },
+                label = { Text("Φθηνότερη τιμή") }
+            )
+        }
+        item {
+            FilterChip(
+                selected = sortBy == "name" && sortOrder == "asc",
+                onClick = {
+                    if (!(sortBy == "name" && sortOrder == "asc")) {
+                        onSortChanged("name", "asc")
+                    }
+                },
+                label = { Text("Αλφαβητικά") }
             )
         }
     }

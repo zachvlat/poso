@@ -85,6 +85,15 @@ class CartViewModel : ViewModel() {
         rebuildState()
     }
 
+    fun getSharePayload(): String? = CartRepository.getSharePayload()
+
+    fun importCart(payload: String): Boolean {
+        if (!CartRepository.replaceCart(payload)) return false
+        productCache.clear()
+        refresh()
+        return true
+    }
+
     private fun rebuildState() {
         val quantities = CartRepository.getQuantities()
         if (quantities.isEmpty()) {
